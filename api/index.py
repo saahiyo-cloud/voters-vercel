@@ -89,75 +89,6 @@ class SearchRequest(BaseModel):
     captchaId: str
     captchaData: str
 
-def clean_captcha_image(image_bytes):
-    from PIL import Image, ImageFilter
-    import io
-    
-    img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
-    datas = img.getdata()
-    
-    new_data = []
-    for item in datas:
-        r, g, b, a = item
-        # Filter for green text (removes lines and grids)
-        if g > r + 25 and g > b + 25 and g < 180:
-            new_data.append((0, 0, 0, 255)) # Convert text to solid black
-        else:
-            new_data.append((255, 255, 255, 255)) # Background to white
-            
-    img.putdata(new_data)
-    
-    # Smooth and thicken text to close gaps left by line removal
-    img = img.filter(ImageFilter.MinFilter(3))
-    
-    # Upscale 3x for OCR accuracy
-    w, h = img.size
-    img_large = img.resize((w * 3, h * 3), Image.Resampling.LANCZOS)
-    
-    output = io.BytesIO()
-    img_large.save(output, format="PNG")
-    return output.getvalue()
-
-def solve_captcha(image_bytes):
-    try:
-        cleaned_bytes = clean_captcha_image(image_bytes)
-        ocr_url = "https://api.ocr.space/parse/image"
-        # Try OCR.space API with default test key 'helloworld'
-        payload = {
-            "apikey": "helloworld",
-            "language": "eng",
-            "isOverlayRequired": False,
-            "OCREngine": 2  # Engine 2 is optimized for CAPTCHAs
-        }
-        files = {
-            "file": ("captcha.png", cleaned_bytes, "image/png")
-        }
-        ocr_resp = requests.post(ocr_url, data=payload, files=files, timeout=12)
-        if ocr_resp.status_code == 200:
-            result = ocr_resp.json()
-            parsed_results = result.get("ParsedResults", [])
-            if parsed_results:
-                text = parsed_results[0].get("ParsedText", "").strip()
-                cleaned_text = "".join(text.split())
-                
-                # If Engine 2 returned empty or garbage, fall back to Engine 1
-                if not cleaned_text or len(cleaned_text) < 4:
-                    payload["OCREngine"] = 1
-                    ocr_resp = requests.post(ocr_url, data=payload, files=files, timeout=12)
-                    if ocr_resp.status_code == 200:
-                        result = ocr_resp.json()
-                        parsed_results = result.get("ParsedResults", [])
-                        if parsed_results:
-                            text = parsed_results[0].get("ParsedText", "").strip()
-                            cleaned_text = "".join(text.split())
-                
-                # Filter out non-alphanumeric noise characters
-                cleaned_text = "".join([c for c in cleaned_text if c.isalnum()])
-                return cleaned_text
-    except Exception as e:
-        print(f"CAPTCHA solver error: {e}")
-    return ""
-
 @app.get("/api/captcha")
 def get_captcha():
     url = "https://gateway-voters.eci.gov.in/api/v1/captcha-service/getCaptcha/sir"
@@ -168,20 +99,10 @@ def get_captcha():
             encrypted_data = res_json.get("data")
             if encrypted_data:
                 decrypted = decrypt_data(encrypted_data)
-                captcha_image_b64 = decrypted.get("captcha")
-                
-                auto_solve_text = ""
-                try:
-                    image_bytes = base64.b64decode(captcha_image_b64)
-                    auto_solve_text = solve_captcha(image_bytes)
-                except Exception as e:
-                    print(f"Auto-solve failed: {e}")
-                
                 return {
                     "status": "success",
                     "captcha_id": decrypted.get("id"),
-                    "captcha_image": captcha_image_b64,
-                    "auto_solve": auto_solve_text
+                    "captcha_image": decrypted.get("captcha")
                 }
         raise HTTPException(status_code=500, detail="Failed to retrieve captcha data from ECI gateway.")
     except Exception as e:
