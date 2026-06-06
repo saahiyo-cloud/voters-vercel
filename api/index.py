@@ -218,10 +218,57 @@ def search_voter(req: SearchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
 
+@app.get("/api/debug")
+def debug_info():
+    import sys
+    pillow_ok = False
+    pillow_err = ""
+    try:
+        from PIL import Image, ImageFilter
+        pillow_ok = True
+    except Exception as e:
+        pillow_err = str(e)
+        
+    ocr_test_ok = False
+    ocr_test_result = ""
+    try:
+        # Create a tiny 10x10 white image
+        from PIL import Image
+        import io
+        img = Image.new("RGB", (10, 10), color="white")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        cleaned_bytes = buf.getvalue()
+        
+        ocr_url = "https://api.ocr.space/parse/image"
+        payload = {
+            "apikey": os.environ.get("OCR_API_KEY", "helloworld"),
+            "language": "eng",
+            "isOverlayRequired": False,
+            "OCREngine": 1
+        }
+        files = {
+            "file": ("test.png", cleaned_bytes, "image/png")
+        }
+        ocr_resp = requests.post(ocr_url, data=payload, files=files, timeout=10)
+        ocr_test_ok = True
+        ocr_test_result = ocr_resp.json()
+    except Exception as e:
+        ocr_test_result = str(e)
+        
+    return {
+        "python_version": sys.version,
+        "pillow_installed": pillow_ok,
+        "pillow_error": pillow_err,
+        "ocr_test_ok": ocr_test_ok,
+        "ocr_test_result": ocr_test_result
+    }
+
 # Serve static files both locally and on Vercel
 from fastapi.staticfiles import StaticFiles
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 app.mount("/", StaticFiles(directory=parent_dir, html=True), name="static")
+
 
 
