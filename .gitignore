@@ -3,3 +3,5 @@ __pycache__/
 captcha.png
 voters_resp.json
 resp.json
+
+.vercel

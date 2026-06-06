@@ -139,10 +139,10 @@ def search_voter(req: SearchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
 
-# Only serve static files locally
-if not os.environ.get("VERCEL"):
-    from fastapi.staticfiles import StaticFiles
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(current_dir)
-    app.mount("/", StaticFiles(directory=parent_dir, html=True), name="static")
+# Serve static files both locally and on Vercel
+from fastapi.staticfiles import StaticFiles
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+app.mount("/", StaticFiles(directory=parent_dir, html=True), name="static")
+
 
