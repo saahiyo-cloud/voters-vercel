@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electoral Search Portal - EPIC Voter Finder</title>
+  <!-- SEO Tags -->
+  <meta name="description" content="Search your voter card details by EPIC number. Find polling stations, electoral rolls, and voter profile in a premium, secure portal.">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Remix Icon -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+  <div class="background-decor blob-1"></div>
+  <div class="background-decor blob-2"></div>
+
+  <main class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <i class="ri-id-card-line"></i>
+      </div>
+      <h1>Electoral Search Portal</h1>
+      <p class="subtitle">Securely verify and search voter registration details using EPIC (Voter ID) numbers</p>
+    </header>
+
+    <!-- Search Card -->
+    <section class="search-card glass">
+      <form id="voter-search-form" autocomplete="off">
+        <div class="form-grid">
+          <!-- EPIC Number -->
+          <div class="input-group">
+            <label for="epic-number">EPIC Number (Voter ID)</label>
+            <div class="input-wrapper">
+              <i class="ri-search-2-line input-icon"></i>
+              <input type="text" id="epic-number" name="epicNumber" placeholder="e.g. ZNO1150077" required>
+            </div>
+          </div>
+
+          <!-- State Selection -->
+          <div class="input-group">
+            <label for="state-search">Select State</label>
+            <div class="input-wrapper">
+              <input type="text" id="state-search" list="state-list" placeholder="Search and select state..." required>
+              <datalist id="state-list">
+                <option value="Andhra Pradesh"></option>
+                <option value="Arunachal Pradesh"></option>
+                <option value="Assam"></option>
+                <option value="Bihar"></option>
+                <option value="Goa"></option>
+                <option value="Gujarat"></option>
+                <option value="Haryana"></option>
+                <option value="Himachal Pradesh"></option>
+                <option value="Jammu and Kashmir"></option>
+                <option value="Karnataka"></option>
+                <option value="Kerala"></option>
+                <option value="Madhya Pradesh"></option>
+                <option value="Maharashtra"></option>
+                <option value="Manipur"></option>
+                <option value="Meghalaya"></option>
+                <option value="Mizoram"></option>
+                <option value="Nagaland"></option>
+                <option value="Odisha"></option>
+                <option value="Punjab"></option>
+                <option value="Rajasthan"></option>
+                <option value="Sikkim"></option>
+                <option value="Tamil Nadu"></option>
+                <option value="Tripura"></option>
+                <option value="Uttar Pradesh"></option>
+                <option value="West Bengal"></option>
+                <option value="Chhattisgarh"></option>
+                <option value="Jharkhand"></option>
+                <option value="Uttarakhand"></option>
+                <option value="Telangana"></option>
+                <option value="Andaman and Nicobar Islands"></option>
+                <option value="Chandigarh"></option>
+                <option value="Dadra and Nagar Haveli and Daman and Diu"></option>
+                <option value="Delhi (NCT)"></option>
+                <option value="Lakshadweep"></option>
+                <option value="Puducherry"></option>
+                <option value="Ladakh"></option>
+              </datalist>
+            </div>
+          </div>
+        </div>
+
+        <!-- Captcha Row -->
+        <div class="captcha-row">
+          <div class="captcha-image-wrapper">
+            <div id="captcha-loader" class="captcha-spinner"></div>
+            <img id="captcha-img" src="" alt="ECI Captcha" class="hidden">
+            <button type="button" id="refresh-captcha" aria-label="Refresh Captcha">
+              <i class="ri-refresh-line"></i>
+            </button>
+          </div>
+          <div class="input-group no-margin">
+            <label for="captcha-input">Enter Captcha</label>
+            <input type="text" id="captcha-input" name="captchaData" placeholder="Captcha characters" required>
+          </div>
+        </div>
+
+        <input type="hidden" id="captcha-id" name="captchaId">
+
+        <button type="submit" id="search-btn" class="btn btn-primary">
+          <span class="btn-text">Search Voter Record</span>
+          <span class="btn-spinner hidden"></span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Error Alert -->
+    <div id="error-message" class="alert alert-error hidden">
+      <i class="ri-error-warning-line alert-icon"></i>
+      <span class="alert-text">An error occurred while performing search.</span>
+    </div>
+
+    <!-- No results Alert -->
+    <div id="no-results-message" class="alert alert-warning hidden">
+      <i class="ri-alert-line alert-icon"></i>
+      <span class="alert-text">No matching voter record found. Please verify the EPIC number and State selected.</span>
+    </div>
+
+    <!-- Results Panel -->
+    <section id="results-panel" class="results-panel hidden">
+      <div class="results-header">
+        <h2>Electoral Search Results</h2>
+        <div class="action-buttons">
+          <button type="button" id="print-btn" class="btn btn-secondary">
+            <i class="ri-printer-line"></i>
+            Print Slip
+          </button>
+        </div>
+      </div>
+
+      <div class="results-grid">
+        <!-- Card 1: Voter Profile -->
+        <div class="card glass">
+          <div class="card-header">
+            <h3>Personal Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Full Name</span>
+              <span class="value" id="res-name">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Name (Regional)</span>
+              <span class="value" id="res-name-lang">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Relation Name</span>
+              <span class="value" id="res-relation">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Relation Type</span>
+              <span class="value" id="res-relation-type">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Age / Gender</span>
+              <span class="value" id="res-age-gender">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Electoral Details -->
+        <div class="card glass">
+          <div class="card-header">
+            <h3>Electoral Roll Details</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">EPIC Number</span>
+              <span class="value highlight-text" id="res-epic">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">State</span>
+              <span class="value" id="res-state">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Assembly Constituency (AC)</span>
+              <span class="value" id="res-assembly">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Parliamentary Constituency</span>
+              <span class="value" id="res-parliament">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Part Number & Name</span>
+              <span class="value" id="res-part">-</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Part Serial Number</span>
+              <span class="value highlight-text" id="res-serial">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Polling Station Details -->
+        <div class="card glass span-2">
+          <div class="card-header">
+            <h3>Polling Station Information</h3>
+          </div>
+          <div class="card-body split-body">
+            <div class="split-info">
+              <div class="info-row">
+                <span class="label">Polling Station</span>
+                <span class="value" id="res-polling-station">-</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Room Details</span>
+                <span class="value" id="res-room-details">-</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Building Address</span>
+                <span class="value" id="res-building-address">-</span>
+              </div>
+            </div>
+            <div class="map-link-container" id="map-container">
+              <a href="#" target="_blank" id="map-link" class="map-button">
+                <i class="ri-map-pin-line"></i>
+                <span>Locate Polling Station on Map</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer-banner">
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="https://voters.eci.gov.in" target="_blank"><i class="ri-external-link-line"></i> Official Voter Portal</a>
+        <a href="https://eci.gov.in" target="_blank"><i class="ri-global-line"></i> ECI Website</a>
+        <a href="javascript:window.print()"><i class="ri-printer-line"></i> Print voter Slip</a>
+      </div>
+      <p class="footer-copy">ECI Voter Search Portal &bull; Secure API Integration &bull; &copy; 2026</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
