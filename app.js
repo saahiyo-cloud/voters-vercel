@@ -176,6 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
         captchaImg.src = captchaSrc;
         captchaIdInput.value = data.captcha_id;
         
+        // Auto-fill solved CAPTCHA text if returned
+        if (data.auto_solve) {
+          captchaInput.value = data.auto_solve;
+        } else {
+          captchaInput.value = '';
+        }
+        
         // Wait for image load to display cleanly
         captchaImg.onload = () => {
           captchaLoader.classList.add('hidden');
